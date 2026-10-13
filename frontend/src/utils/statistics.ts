@@ -16,6 +16,9 @@ import {
   MannWhitneyResult,
   KruskalWallisResult,
   KruskalWallisGroupStat,
+  LogisticCoefficient,
+  LogisticRegressionResult,
+  WilcoxonResult,
 } from '../types/dataset';
 
 // Approximation of error function erf(x)
@@ -1158,6 +1161,377 @@ export function computeKruskalWallis(
     groupStats,
     hStatistic: hStat,
     df,
+    pValue: pVal,
+    apaStatement,
+  };
+}
+
+// -----------------------------------------------------------------------------
+// BINARY LOGISTIC REGRESSION
+// -----------------------------------------------------------------------------
+export function computeLogisticRegression(
+  rows: Record<string, any>[],
+  depVar: string,
+  covariates: string[]
+): LogisticRegressionResult {
+  // Extract and clean rows
+  const cleanData: { y: number; x: number[] }[] = [];
+  for (const r of rows) {
+    const rawY = r[depVar];
+    if (rawY === undefined || rawY === null || rawY === '') continue;
+    let y = Number(rawY);
+    if (isNaN(y)) continue;
+    // Normalize to 0 or 1
+    y = y > 0 ? 1 : 0;
+
+    const xVals: number[] = [1.0]; // Intercept
+    let validX = true;
+    for (const cov of covariates) {
+      const v = Number(r[cov]);
+      if (isNaN(v)) {
+        validX = false;
+        break;
+      }
+      xVals.push(v);
+    }
+    if (validX) {
+      cleanData.push({ y, x: xVals });
+    }
+  }
+
+  const n = cleanData.length;
+  const p = covariates.length;
+  const k = p + 1;
+
+  if (n < k + 2) {
+    throw new Error(`Insufficient sample size (N=${n}) for ${p} covariates in Logistic Regression.`);
+  }
+
+  // IRLS (Iteratively Reweighted Least Squares)
+  let beta = new Array(k).fill(0);
+  // Initialize intercept with log odds of positive cases
+  const posCount = cleanData.filter((d) => d.y === 1).length;
+  const p0 = Math.max(0.01, Math.min(0.99, posCount / n));
+  beta[0] = Math.log(p0 / (1 - p0));
+
+  let inv: number[][] = Array.from({ length: k }, (_, r) =>
+    Array.from({ length: k }, (_, c) => (r === c ? 1.0 : 0.0))
+  );
+
+  const maxIters = 25;
+  for (let iter = 0; iter < maxIters; iter++) {
+    // Compute probabilities and weights
+    const probs = new Array(n);
+    const weights = new Array(n);
+    for (let i = 0; i < n; i++) {
+      let eta = 0;
+      for (let j = 0; j < k; j++) {
+        eta += beta[j] * cleanData[i].x[j];
+      }
+      // Sigmoid function with clamping
+      eta = Math.max(-20, Math.min(20, eta));
+      const prob = 1 / (1 + Math.exp(-eta));
+      probs[i] = Math.max(1e-12, Math.min(1 - 1e-12, prob));
+      weights[i] = probs[i] * (1 - probs[i]);
+    }
+
+    // Hessian: X^T * W * X
+    const xtwx: number[][] = Array.from({ length: k }, () => new Array(k).fill(0));
+    // Gradient: X^T * (y - p)
+    const grad: number[] = new Array(k).fill(0);
+
+    for (let i = 0; i < n; i++) {
+      const row = cleanData[i];
+      const diff = row.y - probs[i];
+      const w = weights[i];
+      for (let j = 0; j < k; j++) {
+        grad[j] += row.x[j] * diff;
+        for (let m = 0; m < k; m++) {
+          xtwx[j][m] += row.x[j] * w * row.x[m];
+        }
+      }
+    }
+
+    // Regularization diagonal boost if needed
+    for (let j = 0; j < k; j++) {
+      xtwx[j][j] += 1e-8;
+    }
+
+    // Invert X^T * W * X using Gauss-Jordan
+    const A = xtwx.map((row) => [...row]);
+    inv = Array.from({ length: k }, (_, r) =>
+      Array.from({ length: k }, (_, c) => (r === c ? 1.0 : 0.0))
+    );
+
+    let singular = false;
+    for (let col = 0; col < k; col++) {
+      let pivot = col;
+      for (let r = col + 1; r < k; r++) {
+        if (Math.abs(A[r][col]) > Math.abs(A[pivot][col])) pivot = r;
+      }
+      [A[col], A[pivot]] = [A[pivot], A[col]];
+      [inv[col], inv[pivot]] = [inv[pivot], inv[col]];
+
+      const div = A[col][col];
+      if (Math.abs(div) < 1e-12) {
+        singular = true;
+        break;
+      }
+      for (let c = 0; c < k; c++) {
+        A[col][c] /= div;
+        inv[col][c] /= div;
+      }
+      for (let r = 0; r < k; r++) {
+        if (r !== col) {
+          const factor = A[r][col];
+          for (let c = 0; c < k; c++) {
+            A[r][c] -= factor * A[col][c];
+            inv[r][c] -= factor * inv[col][c];
+          }
+        }
+      }
+    }
+
+    if (singular) break;
+
+    // Delta = inv * grad
+    const delta = new Array(k).fill(0);
+    for (let r = 0; r < k; r++) {
+      for (let c = 0; c < k; c++) {
+        delta[r] += inv[r][c] * grad[c];
+      }
+    }
+
+    let maxChange = 0;
+    for (let j = 0; j < k; j++) {
+      beta[j] += delta[j];
+      maxChange = Math.max(maxChange, Math.abs(delta[j]));
+    }
+
+    if (maxChange < 1e-6) break;
+  }
+
+  // Model statistics
+  let ll1 = 0;
+  for (let i = 0; i < n; i++) {
+    let eta = 0;
+    for (let j = 0; j < k; j++) {
+      eta += beta[j] * cleanData[i].x[j];
+    }
+    eta = Math.max(-20, Math.min(20, eta));
+    const pr = Math.max(1e-12, Math.min(1 - 1e-12, 1 / (1 + Math.exp(-eta))));
+    ll1 += cleanData[i].y * Math.log(pr) + (1 - cleanData[i].y) * Math.log(1 - pr);
+  }
+
+  const minus2LL = -2 * ll1;
+
+  // Null Model
+  let ll0 = 0;
+  for (let i = 0; i < n; i++) {
+    ll0 += cleanData[i].y * Math.log(p0) + (1 - cleanData[i].y) * Math.log(1 - p0);
+  }
+
+  const omnibusChi = Math.max(0, 2 * (ll1 - ll0));
+  const omnibusDf = p;
+  const omnibusP = chiSquareRightTail(omnibusChi, omnibusDf);
+
+  const coxSnell = Math.max(0, Math.min(0.999, 1 - Math.exp((-2 / n) * (ll1 - ll0))));
+  const maxCoxSnell = 1 - Math.exp((2 / n) * ll0);
+  const nagelkerke = maxCoxSnell > 0 ? Math.min(1, coxSnell / maxCoxSnell) : 0;
+
+  // Classification Table (Cut-off = 0.5)
+  let obs0pred0 = 0;
+  let obs0pred1 = 0;
+  let obs1pred0 = 0;
+  let obs1pred1 = 0;
+
+  for (let i = 0; i < n; i++) {
+    let eta = 0;
+    for (let j = 0; j < k; j++) {
+      eta += beta[j] * cleanData[i].x[j];
+    }
+    const pr = 1 / (1 + Math.exp(-Math.max(-20, Math.min(20, eta))));
+    const predicted = pr >= 0.5 ? 1 : 0;
+    const actual = cleanData[i].y;
+
+    if (actual === 0 && predicted === 0) obs0pred0++;
+    else if (actual === 0 && predicted === 1) obs0pred1++;
+    else if (actual === 1 && predicted === 0) obs1pred0++;
+    else if (actual === 1 && predicted === 1) obs1pred1++;
+  }
+
+  const pct0 = (obs0pred0 + obs0pred1) > 0 ? (obs0pred0 / (obs0pred0 + obs0pred1)) * 100 : 0;
+  const pct1 = (obs1pred0 + obs1pred1) > 0 ? (obs1pred1 / (obs1pred0 + obs1pred1)) * 100 : 0;
+  const totalPct = ((obs0pred0 + obs1pred1) / n) * 100;
+
+  // Coefficients Table
+  const coefficients: LogisticCoefficient[] = [];
+  const termNames = ['Constant', ...covariates];
+
+  for (let j = 0; j < k; j++) {
+    const b = beta[j];
+    const variance = Math.max(1e-12, inv[j][j]);
+    const se = Math.sqrt(variance);
+    const wald = se > 0 ? Math.pow(b / se, 2) : 0;
+    const pVal = chiSquareRightTail(wald, 1);
+    const expB = Math.exp(Math.max(-20, Math.min(20, b)));
+    const ciLower = Math.exp(Math.max(-20, Math.min(20, b - 1.96 * se)));
+    const ciUpper = Math.exp(Math.max(-20, Math.min(20, b + 1.96 * se)));
+
+    coefficients.push({
+      term: termNames[j],
+      b,
+      se,
+      wald,
+      df: 1,
+      pValue: pVal,
+      expB,
+      ciLowerExpB: ciLower,
+      ciUpperExpB: ciUpper,
+    });
+  }
+
+  const apaStatement = `A binary logistic regression was conducted to examine the effects of ${covariates.join(
+    ', '
+  )} on ${depVar}. The overall model was statistically ${
+    omnibusP < 0.05 ? 'significant' : 'non-significant'
+  }, χ²(${omnibusDf}) = ${omnibusChi.toFixed(3)}, p = ${
+    omnibusP < 0.001 ? '< .001' : omnibusP.toFixed(4)
+  }, explaining ${(nagelkerke * 100).toFixed(1)}% of variance (Nagelkerke R² = ${nagelkerke.toFixed(
+    3
+  )}) with an overall classification accuracy of ${totalPct.toFixed(1)}%.`;
+
+  return {
+    testName: 'Binary Logistic Regression',
+    dependentVar: depVar,
+    covariates,
+    n,
+    minus2LogLikelihood: minus2LL,
+    coxSnellR2: coxSnell,
+    nagelkerkeR2: nagelkerke,
+    omnibusChiSquare: omnibusChi,
+    omnibusDf,
+    omnibusPValue: omnibusP,
+    overallPercentageCorrect: totalPct,
+    classificationTable: {
+      observed0Predicted0: obs0pred0,
+      observed0Predicted1: obs0pred1,
+      observed1Predicted0: obs1pred0,
+      observed1Predicted1: obs1pred1,
+      percentCorrect0: pct0,
+      percentCorrect1: pct1,
+      totalPercentCorrect: totalPct,
+    },
+    coefficients,
+    apaStatement,
+  };
+}
+
+// -----------------------------------------------------------------------------
+// WILCOXON SIGNED-RANK TEST (PAIRED NONPARAMETRIC)
+// -----------------------------------------------------------------------------
+export function computeWilcoxonSignedRank(
+  rows: Record<string, any>[],
+  var1: string,
+  var2: string
+): WilcoxonResult {
+  const pairs: { diff: number; absDiff: number }[] = [];
+  let tiesCount = 0;
+
+  for (const r of rows) {
+    const v1 = Number(r[var1]);
+    const v2 = Number(r[var2]);
+    if (!isNaN(v1) && !isNaN(v2)) {
+      const diff = v2 - v1;
+      if (Math.abs(diff) < 1e-9) {
+        tiesCount++;
+      } else {
+        pairs.push({ diff, absDiff: Math.abs(diff) });
+      }
+    }
+  }
+
+  const nPairs = pairs.length;
+  if (nPairs === 0) {
+    return {
+      testName: 'Wilcoxon Signed-Rank Test',
+      var1Name: var1,
+      var2Name: var2,
+      n: rows.length,
+      negativeRanksN: 0,
+      negativeRanksMean: 0,
+      negativeRanksSum: 0,
+      positiveRanksN: 0,
+      positiveRanksMean: 0,
+      positiveRanksSum: 0,
+      tiesN: tiesCount,
+      zScore: 0,
+      pValue: 1,
+      apaStatement: 'No non-tied pairs available for Wilcoxon Signed-Rank test.',
+    };
+  }
+
+  // Sort by absolute difference
+  pairs.sort((a, b) => a.absDiff - b.absDiff);
+
+  // Assign average ranks
+  const ranks = new Array(nPairs);
+  let i = 0;
+  while (i < nPairs) {
+    let j = i;
+    while (j < nPairs && Math.abs(pairs[j].absDiff - pairs[i].absDiff) < 1e-9) {
+      j++;
+    }
+    const avgRank = (i + 1 + j) / 2;
+    for (let k = i; k < j; k++) {
+      ranks[k] = avgRank;
+    }
+    i = j;
+  }
+
+  let negN = 0;
+  let negSum = 0;
+  let posN = 0;
+  let posSum = 0;
+
+  for (let k = 0; k < nPairs; k++) {
+    if (pairs[k].diff < 0) {
+      negN++;
+      negSum += ranks[k];
+    } else {
+      posN++;
+      posSum += ranks[k];
+    }
+  }
+
+  const negMean = negN > 0 ? negSum / negN : 0;
+  const posMean = posN > 0 ? posSum / posN : 0;
+
+  // Expected mean and variance of W
+  const muW = (nPairs * (nPairs + 1)) / 4;
+  const sigmaW = Math.sqrt((nPairs * (nPairs + 1) * (2 * nPairs + 1)) / 24);
+
+  const testStat = posSum;
+  const zScore = sigmaW > 0 ? (testStat - muW) / sigmaW : 0;
+  const pVal = Math.max(0, Math.min(1, 2 * (1 - normalCDF(Math.abs(zScore)))));
+
+  const apaStatement = `A Wilcoxon signed-rank test indicated that scores on ${var2} differed from ${var1}, Z = ${zScore.toFixed(
+    3
+  )}, p = ${pVal < 0.001 ? '< .001' : pVal.toFixed(4)}.`;
+
+  return {
+    testName: 'Wilcoxon Signed-Rank Test',
+    var1Name: var1,
+    var2Name: var2,
+    n: rows.length,
+    negativeRanksN: negN,
+    negativeRanksMean: negMean,
+    negativeRanksSum: negSum,
+    positiveRanksN: posN,
+    positiveRanksMean: posMean,
+    positiveRanksSum: posSum,
+    tiesN: tiesCount,
+    zScore,
     pValue: pVal,
     apaStatement,
   };

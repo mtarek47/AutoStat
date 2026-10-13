@@ -254,3 +254,57 @@ export interface KruskalWallisResult {
   apaStatement: string;
 }
 
+export interface LogisticCoefficient {
+  term: string;
+  b: number;
+  se: number;
+  wald: number;
+  df: number;
+  pValue: number;
+  expB: number;
+  ciLowerExpB: number;
+  ciUpperExpB: number;
+}
+
+export interface LogisticRegressionResult {
+  testName: string;
+  dependentVar: string;
+  covariates: string[];
+  n: number;
+  minus2LogLikelihood: number;
+  coxSnellR2: number;
+  nagelkerkeR2: number;
+  omnibusChiSquare: number;
+  omnibusDf: number;
+  omnibusPValue: number;
+  overallPercentageCorrect: number;
+  classificationTable: {
+    observed0Predicted0: number;
+    observed0Predicted1: number;
+    observed1Predicted0: number;
+    observed1Predicted1: number;
+    percentCorrect0: number;
+    percentCorrect1: number;
+    totalPercentCorrect: number;
+  };
+  coefficients: LogisticCoefficient[];
+  apaStatement: string;
+}
+
+export interface WilcoxonResult {
+  testName: string;
+  var1Name: string;
+  var2Name: string;
+  n: number;
+  negativeRanksN: number;
+  negativeRanksMean: number;
+  negativeRanksSum: number;
+  positiveRanksN: number;
+  positiveRanksMean: number;
+  positiveRanksSum: number;
+  tiesN: number;
+  zScore: number;
+  pValue: number;
+  apaStatement: string;
+}
+

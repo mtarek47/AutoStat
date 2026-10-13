@@ -28,6 +28,10 @@ interface DataEditorViewProps {
   onUpdateDataset: (updated: Dataset) => void;
   onNavigateToAnalysis: () => void;
   lang: 'en' | 'bn';
+  editorMode?: 'data' | 'variable';
+  setEditorMode?: (mode: 'data' | 'variable') => void;
+  showLabels?: boolean;
+  setShowLabels?: (val: boolean) => void;
 }
 
 export const DataEditorView: React.FC<DataEditorViewProps> = ({
@@ -35,13 +39,23 @@ export const DataEditorView: React.FC<DataEditorViewProps> = ({
   onUpdateDataset,
   onNavigateToAnalysis,
   lang,
+  editorMode: externalEditorMode,
+  setEditorMode: externalSetEditorMode,
+  showLabels: externalShowLabels,
+  setShowLabels: externalSetShowLabels,
 }) => {
-  const [editorMode, setEditorMode] = useState<'data' | 'variable'>('data');
+  const [internalMode, setInternalMode] = useState<'data' | 'variable'>('data');
+  const [internalShowLabels, setInternalShowLabels] = useState<boolean>(true);
+
+  const editorMode = externalEditorMode ?? internalMode;
+  const setEditorMode = externalSetEditorMode ?? setInternalMode;
+  const showLabels = externalShowLabels ?? internalShowLabels;
+  const setShowLabels = externalSetShowLabels ?? setInternalShowLabels;
+
   const [selectedColumnName, setSelectedColumnName] = useState<string>(
     dataset.columns[0]?.name || ''
   );
   const [showVariableSidebar, setShowVariableSidebar] = useState<boolean>(true);
-  const [showLabels, setShowLabels] = useState<boolean>(true);
 
   const selectedColumn =
     dataset.columns.find((c) => c.name === selectedColumnName) || dataset.columns[0];
@@ -190,108 +204,57 @@ export const DataEditorView: React.FC<DataEditorViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-85px)] bg-slate-100 overflow-hidden select-none">
-      {/* Sub-toolbar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs shadow-xs">
+    <div className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
+      {/* Classic SPSS Cell Formula / Value Bar */}
+      <div className="bg-slate-100 border-b border-slate-300 px-3 py-1 flex items-center justify-between text-xs select-none">
         <div className="flex items-center space-x-2">
-          {/* SPSS Data View vs Variable View Toggle Switch */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-            <button
-              onClick={() => setEditorMode('data')}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-semibold transition ${
-                editorMode === 'data'
-                  ? 'bg-white text-blue-600 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>{lang === 'bn' ? 'Data View (ডেটা)' : 'Data View'}</span>
-            </button>
-            <button
-              onClick={() => setEditorMode('variable')}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-semibold transition ${
-                editorMode === 'variable'
-                  ? 'bg-white text-blue-600 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>{lang === 'bn' ? 'Variable View (ভেরিয়েবল)' : 'Variable View'}</span>
-            </button>
-          </div>
-
-          <div className="h-4 w-px bg-slate-200 mx-1"></div>
-
-          <button
-            onClick={exportCSV}
-            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded hover:bg-slate-100 text-slate-700 font-medium transition"
-            title="Export CSV"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>{lang === 'bn' ? 'এক্সপোর্ট CSV' : 'Export CSV'}</span>
-          </button>
-
-          <button
-            onClick={handleAddNewVariable}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded hover:bg-slate-100 text-slate-700 font-medium transition"
-          >
-            <Plus className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{lang === 'bn' ? '+ ভেরিয়েবল যোগ' : '+ Add Variable'}</span>
-          </button>
-
-          <div className="h-4 w-px bg-slate-200 mx-1"></div>
-
-          <button
-            onClick={() => onNavigateToAnalysis()}
-            className="flex items-center space-x-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-blue-200 transition"
-          >
-            <Plus className="w-3.5 h-3.5 text-blue-600" />
-            <span>{lang === 'bn' ? '+ নতুন অ্যানালাইসিস' : '+ New Analysis'}</span>
-          </button>
-
-          <div className="h-4 w-px bg-slate-200 mx-1"></div>
-
-          {/* Value / Label Switch */}
-          {editorMode === 'data' && (
-            <div className="flex items-center space-x-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 text-slate-600 font-medium">
-              <span>Value</span>
-              <button
-                onClick={() => setShowLabels(!showLabels)}
-                className={`w-8 h-4 rounded-full transition relative ${
-                  showLabels ? 'bg-purple-600' : 'bg-slate-300'
+          {/* Cell Coordinates indicator like `1 : id` */}
+          <div className="bg-white border border-slate-300 rounded px-2.5 py-0.5 font-mono text-[11px] font-semibold text-slate-700 min-w-[70px] text-center shadow-2xs">
+            {editorMode === 'data'
+              ? `1 : ${selectedColumnName || 'var'}`
+              : `${dataset.columns.findIndex((c) => c.name === selectedColumnName) + 1} : ${
+                  selectedColumnName || 'var'
                 }`}
-              >
-                <div
-                  className={`w-3.5 h-3.5 rounded-full bg-white transition absolute top-0.25 ${
-                    showLabels ? 'right-0.5' : 'left-0.5'
-                  }`}
-                />
-              </button>
-              <span className={showLabels ? 'text-purple-700 font-semibold' : ''}>Label</span>
-            </div>
-          )}
+          </div>
+          <div className="text-slate-400 font-serif italic text-xs">fx</div>
+          <div className="bg-white border border-slate-300 rounded px-2.5 py-0.5 text-xs text-slate-800 font-mono min-w-[220px] shadow-2xs">
+            {editorMode === 'data'
+              ? String(dataset.rows[0]?.[selectedColumnName] ?? '')
+              : selectedColumn?.label || selectedColumn?.name || ''}
+          </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
+          {editorMode === 'variable' && (
+            <button
+              onClick={handleAddNewVariable}
+              className="flex items-center space-x-1 px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-medium transition text-xs shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{lang === 'bn' ? '+ নতুন ভেরিয়েবল' : '+ Add Variable'}</span>
+            </button>
+          )}
           <button
             onClick={() => setShowVariableSidebar(!showVariableSidebar)}
-            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded border transition font-medium ${
+            className={`flex items-center space-x-1 px-2.5 py-1 rounded border transition font-medium text-xs shadow-2xs ${
               showVariableSidebar
-                ? 'bg-slate-900 text-white border-slate-900'
+                ? 'bg-slate-800 text-white border-slate-800'
                 : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>{lang === 'bn' ? 'ভেরিয়েবল প্যানেল' : 'Variable Info Panel'}</span>
+            <span>{showVariableSidebar ? 'Hide Info' : 'Variable Info'}</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* VIEW 1: DATA VIEW (SPREADSHEET OF CASES) */}
-        {editorMode === 'data' && (
-          <div className="flex-1 overflow-auto bg-white border-r border-slate-200">
+        {/* Table & Bottom Sheet Tabs Container */}
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-slate-200">
+          {/* VIEW 1: DATA VIEW (SPREADSHEET OF CASES) */}
+          {editorMode === 'data' && (
+            <div className="flex-1 overflow-auto bg-white">
             <table className="w-full border-collapse text-xs text-left">
               <thead className="sticky top-0 bg-slate-50 border-b border-slate-300 shadow-xs z-10">
                 <tr>
@@ -553,7 +516,34 @@ export const DataEditorView: React.FC<DataEditorViewProps> = ({
           </div>
         )}
 
-        {/* Collapsible Variable Information Panel */}
+        {/* Authentic IBM SPSS Bottom Sheet Tabs */}
+        <div className="flex items-center bg-slate-200 border-t border-slate-300 px-3 pt-1 text-xs select-none shadow-xs z-10 gap-1">
+          <button
+            onClick={() => setEditorMode('data')}
+            className={`px-3 py-1 font-semibold text-xs transition flex items-center space-x-1.5 rounded-t ${
+              editorMode === 'data'
+                ? 'bg-white border-t-2 border-t-blue-600 border-x border-slate-300 text-blue-700 shadow-2xs font-bold'
+                : 'bg-slate-200 border-t-2 border-transparent text-slate-600 hover:bg-slate-300 hover:text-slate-800'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>{lang === 'bn' ? 'Data View (ডেটা ভিউ)' : 'Data View'}</span>
+          </button>
+          <button
+            onClick={() => setEditorMode('variable')}
+            className={`px-3 py-1 font-semibold text-xs transition flex items-center space-x-1.5 rounded-t ${
+              editorMode === 'variable'
+                ? 'bg-white border-t-2 border-t-blue-600 border-x border-slate-300 text-blue-700 shadow-2xs font-bold'
+                : 'bg-slate-200 border-t-2 border-transparent text-slate-600 hover:bg-slate-300 hover:text-slate-800'
+            }`}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>{lang === 'bn' ? 'Variable View (ভেরিয়েবল ভিউ)' : 'Variable View'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Collapsible Variable Information Panel */}
         {showVariableSidebar && editMeta && (
           <aside className="w-80 bg-slate-900 text-slate-100 flex flex-col border-l border-slate-800 shadow-xl z-20">
             <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
