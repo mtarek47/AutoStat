@@ -1,0 +1,20 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "spss-auto"
+version = "0.1.0"
+description = "Automated Statistical Analysis Platform modernizing SPSS workflows"
+readme = "spss_auto_full_project_blueprint.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyarrow>=14.0",
+    "pandas>=2.0",
+    "pydantic>=2.0",
+]
+
+[tool.maturin]
+manifest-path = "crates/spss_core/Cargo.toml"
+module-name = "spss_core"
+features = ["pyo3/extension-module"]

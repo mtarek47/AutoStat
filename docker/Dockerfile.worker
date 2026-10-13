@@ -1,0 +1,44 @@
+# ---------------------------------------------------------------------
+# Stage 1: Build the Rust Engine via Maturin
+# ---------------------------------------------------------------------
+FROM python:3.11-slim as builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /build
+COPY pyproject.toml ./
+COPY crates/ crates/
+
+RUN pip install --no-cache-dir maturin
+RUN maturin build --manifest-path crates/spss_core/Cargo.toml --release -o /build/wheels
+
+# ---------------------------------------------------------------------
+# Stage 2: Production Execution Environment
+# ---------------------------------------------------------------------
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/wheels/*.whl /tmp/
+RUN pip install --no-cache-dir /tmp/*.whl \
+    pandas \
+    pyarrow \
+    celery \
+    redis \
+    fastapi \
+    uvicorn \
+    python-multipart
+
+COPY services/ /app/services/
+
+ENV PYTHONPATH="/app"

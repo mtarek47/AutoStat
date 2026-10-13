@@ -1,0 +1,18 @@
+[project]
+name = "spss-api"
+version = "0.1.0"
+description = "FastAPI Service for SPSS-Auto Platform"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "celery>=5.3.6",
+    "redis>=5.0.3",
+    "sqlalchemy>=2.0.28",
+    "asyncpg>=0.29.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+]
