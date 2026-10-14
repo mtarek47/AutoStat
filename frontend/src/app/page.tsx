@@ -10,6 +10,9 @@ import { ComputeVariableModal } from '../components/ComputeVariableModal';
 import { SortCasesModal } from '../components/SortCasesModal';
 import { SelectCasesModal } from '../components/SelectCasesModal';
 import { RecodeVariableModal } from '../components/RecodeVariableModal';
+import { SpssChartBuilderModal } from '../components/SpssChartBuilderModal';
+import { SplitFileModal, SplitFileConfig } from '../components/SplitFileModal';
+import { WeightCasesModal, WeightCasesConfig } from '../components/WeightCasesModal';
 import { CREDIT_PROMO_DATASET } from '../data/sampleDatasets';
 import { Dataset } from '../types/dataset';
 
@@ -26,6 +29,19 @@ export default function Home() {
   const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
   const [isSelectCasesModalOpen, setIsSelectCasesModalOpen] = useState<boolean>(false);
   const [isRecodeModalOpen, setIsRecodeModalOpen] = useState<boolean>(false);
+  const [isChartBuilderOpen, setIsChartBuilderOpen] = useState<boolean>(false);
+  const [isSplitFileModalOpen, setIsSplitFileModalOpen] = useState<boolean>(false);
+  const [splitConfig, setSplitConfig] = useState<SplitFileConfig>({
+    enabled: false,
+    mode: 'compare',
+    variable: '',
+    sortBySplit: false,
+  });
+  const [isWeightCasesModalOpen, setIsWeightCasesModalOpen] = useState<boolean>(false);
+  const [weightConfig, setWeightConfig] = useState<WeightCasesConfig>({
+    enabled: false,
+    variable: null,
+  });
 
   const [selectedAnalysisTab, setSelectedAnalysisTab] = useState<string>('ttest');
 
@@ -55,8 +71,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-100 font-sans antialiased text-slate-900">
-      {/* Authentic IBM SPSS Top Menu Bar & Action Ribbon */}
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-100 font-sans antialiased text-gray-900">
+      {/* AutoStat Top Menu Bar & Action Ribbon */}
       <SpssMenuBar
         dataset={dataset}
         onUpdateDataset={handleUpdateDataset}
@@ -70,7 +86,12 @@ export default function Home() {
         onOpenSortModal={() => setIsSortModalOpen(true)}
         onOpenSelectCasesModal={() => setIsSelectCasesModalOpen(true)}
         onOpenRecodeModal={() => setIsRecodeModalOpen(true)}
+        onOpenChartBuilderModal={() => setIsChartBuilderOpen(true)}
+        onOpenSplitFileModal={() => setIsSplitFileModalOpen(true)}
+        onOpenWeightCasesModal={() => setIsWeightCasesModalOpen(true)}
         isFiltered={isFiltered}
+        splitVar={splitConfig.enabled ? splitConfig.variable : null}
+        weightVar={weightConfig.enabled ? weightConfig.variable : null}
         onSelectAnalysisTab={handleSelectAnalysisFromMenu}
         lang={lang}
         setLang={setLang}
@@ -102,19 +123,24 @@ export default function Home() {
             dataset={dataset}
             initialTab={selectedAnalysisTab}
             lang={lang}
+            splitConfig={splitConfig}
+            weightVar={weightConfig.enabled ? weightConfig.variable : null}
           />
         )}
       </main>
 
-      {/* Bottom Status Bar (IBM SPSS Statistics Processor Ready) */}
+      {/* Bottom Status Bar */}
       <StatusBar
         rowCount={dataset.rows.length}
         colCount={dataset.columns.length}
         activeDatasetName={dataset.name}
         lang={lang}
+        isFiltered={isFiltered}
+        splitVar={splitConfig.enabled ? splitConfig.variable : null}
+        weightVar={weightConfig.enabled ? weightConfig.variable : null}
       />
 
-      {/* SPSS Compute Variable Modal */}
+      {/* AutoStat Compute Variable Modal */}
       <ComputeVariableModal
         isOpen={isComputeModalOpen}
         onClose={() => setIsComputeModalOpen(false)}
@@ -123,7 +149,7 @@ export default function Home() {
         lang={lang}
       />
 
-      {/* SPSS Sort Cases Modal */}
+      {/* AutoStat Sort Cases Modal */}
       <SortCasesModal
         isOpen={isSortModalOpen}
         onClose={() => setIsSortModalOpen(false)}
@@ -132,7 +158,7 @@ export default function Home() {
         lang={lang}
       />
 
-      {/* SPSS Select Cases (Filter) Modal */}
+      {/* AutoStat Select Cases (Filter) Modal */}
       <SelectCasesModal
         isOpen={isSelectCasesModalOpen}
         onClose={() => setIsSelectCasesModalOpen(false)}
@@ -144,12 +170,47 @@ export default function Home() {
         lang={lang}
       />
 
-      {/* SPSS Recode into Different Variables Modal */}
+      {/* AutoStat Recode into Different Variables Modal */}
       <RecodeVariableModal
         isOpen={isRecodeModalOpen}
         onClose={() => setIsRecodeModalOpen(false)}
         dataset={dataset}
         onUpdateDataset={handleUpdateDataset}
+        lang={lang}
+      />
+
+      {/* AutoStat Chart Builder Modal */}
+      <SpssChartBuilderModal
+        isOpen={isChartBuilderOpen}
+        onClose={() => setIsChartBuilderOpen(false)}
+        dataset={dataset}
+        lang={lang}
+      />
+
+      {/* AutoStat Split File Modal */}
+      <SplitFileModal
+        isOpen={isSplitFileModalOpen}
+        onClose={() => setIsSplitFileModalOpen(false)}
+        dataset={dataset}
+        currentConfig={splitConfig}
+        onApplyConfig={(newConfig, updatedDs) => {
+          setSplitConfig(newConfig);
+          if (updatedDs) {
+            handleUpdateDataset(updatedDs);
+          }
+        }}
+        lang={lang}
+      />
+
+      {/* AutoStat Weight Cases Modal */}
+      <WeightCasesModal
+        isOpen={isWeightCasesModalOpen}
+        onClose={() => setIsWeightCasesModalOpen(false)}
+        dataset={dataset}
+        currentConfig={weightConfig}
+        onApplyConfig={(newConfig) => {
+          setWeightConfig(newConfig);
+        }}
         lang={lang}
       />
     </div>

@@ -112,14 +112,14 @@ export const ComputeVariableModal: React.FC<ComputeVariableModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs select-none">
       <div className="bg-white rounded-xl shadow-2xl border border-slate-300 w-full max-w-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Window Header */}
-        <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+        <div className="bg-gray-100 text-gray-800 border-b border-gray-300 px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Calculator className="w-4 h-4 text-blue-400" />
+            <Calculator className="w-4 h-4 text-gray-600" />
             <h3 className="font-semibold text-sm">
-              {lang === 'bn' ? 'Compute Variable (ফর্মুলা ট্রান্সফর্মেশন)' : 'Compute Variable'}
+              {lang === 'bn' ? 'AutoStat কমপিউট ভেরিয়েবল (Compute Variable)' : 'AutoStat - Compute Variable'}
             </h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 p-1 rounded">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -213,10 +213,10 @@ export const ComputeVariableModal: React.FC<ComputeVariableModalProps> = ({
         </div>
 
         {/* Modal Action Buttons */}
-        <div className="bg-slate-100 px-5 py-3 border-t border-slate-200 flex items-center justify-end space-x-2">
+        <div className="bg-gray-100 px-5 py-3 border-t border-gray-300 flex items-center justify-end space-x-2">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition font-medium"
+            className="px-4 py-1.5 rounded bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium transition"
           >
             Cancel
           </button>
@@ -226,13 +226,13 @@ export const ComputeVariableModal: React.FC<ComputeVariableModalProps> = ({
               setTargetLabel('');
               setExpression('');
             }}
-            className="px-4 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition font-medium"
+            className="px-4 py-1.5 rounded bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium transition"
           >
             Reset
           </button>
           <button
             onClick={handleCompute}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-1.5 rounded-lg shadow-md shadow-blue-500/20 transition flex items-center space-x-1"
+            className="bg-gray-900 hover:bg-black text-white font-medium px-5 py-1.5 rounded shadow-2xs transition flex items-center space-x-1"
           >
             <Check className="w-4 h-4" />
             <span>OK (Compute)</span>

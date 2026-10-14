@@ -53,13 +53,13 @@ export const SortCasesModal: React.FC<SortCasesModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-2xs p-4 animate-in fade-in-50 duration-150">
       <div className="bg-slate-100 border border-slate-300 rounded-lg shadow-2xl w-full max-w-lg text-slate-800 text-xs overflow-hidden flex flex-col font-sans">
-        {/* Title bar - Classic SPSS Dialog */}
-        <div className="bg-slate-200 px-3 py-2 border-b border-slate-300 flex items-center justify-between font-semibold text-slate-800 select-none">
+        {/* Title bar */}
+        <div className="bg-gray-100 px-3 py-2 border-b border-gray-300 flex items-center justify-between font-semibold text-gray-800 select-none">
           <div className="flex items-center space-x-2">
-            <ArrowUpDown className="w-4 h-4 text-blue-600" />
-            <span>{lang === 'bn' ? 'সর্ট কেস (Sort Cases)' : 'Sort Cases'}</span>
+            <ArrowUpDown className="w-4 h-4 text-gray-600" />
+            <span>{lang === 'bn' ? 'AutoStat সর্ট কেস (Sort Cases)' : 'AutoStat - Sort Cases'}</span>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-300 rounded text-slate-600">
+          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-600">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -158,24 +158,24 @@ export const SortCasesModal: React.FC<SortCasesModalProps> = ({
           </div>
         </div>
 
-        {/* Footer Buttons - Authentic SPSS layout */}
-        <div className="bg-slate-200 border-t border-slate-300 px-4 py-2.5 flex items-center justify-end space-x-2 select-none">
+        {/* Footer Buttons */}
+        <div className="bg-gray-100 border-t border-gray-300 px-4 py-2.5 flex items-center justify-end space-x-2 select-none">
           <button
             onClick={handleExecute}
             disabled={!sortVar}
-            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded shadow-2xs transition"
+            className="px-4 py-1.5 bg-gray-900 hover:bg-black disabled:opacity-50 text-white font-medium rounded shadow-2xs transition"
           >
             {lang === 'bn' ? 'ঠিক আছে (OK)' : 'OK'}
           </button>
           <button
             onClick={handleReset}
-            className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded shadow-2xs transition"
+            className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-2xs transition"
           >
             {lang === 'bn' ? 'রিসেট (Reset)' : 'Reset'}
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded shadow-2xs transition"
+            className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-2xs transition"
           >
             {lang === 'bn' ? 'বাতিল (Cancel)' : 'Cancel'}
           </button>

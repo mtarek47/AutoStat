@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from services.api.app.routers import auth, datasets, analyze
+from services.api.app.routers import auth, datasets, analyze, stats
 from services.api.app.core.config import settings
 
 app = FastAPI(
@@ -11,6 +11,7 @@ app = FastAPI(
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(datasets.router, prefix=settings.API_V1_STR)
 app.include_router(analyze.router, prefix=settings.API_V1_STR)
+app.include_router(stats.router, prefix=settings.API_V1_STR)
 
 @app.get("/health")
 async def health_check():

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AutoStat - AI-Powered Statistical Research Assistant",
-  description: "Modern automated statistical analysis platform with SPSS compatibility, Rust-powered computation, and APA reporting.",
+  title: "AutoStat - AI-Powered Statistical Research Platform",
+  description: "Modern automated statistical analysis platform with SAV compatibility, Rust-powered computation, and APA 7th Edition reporting.",
 };
 
 export default function RootLayout({

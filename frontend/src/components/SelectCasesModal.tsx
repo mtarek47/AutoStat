@@ -76,12 +76,12 @@ export const SelectCasesModal: React.FC<SelectCasesModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-2xs p-4 animate-in fade-in-50 duration-150">
       <div className="bg-slate-100 border border-slate-300 rounded-lg shadow-2xl w-full max-w-xl text-slate-800 text-xs overflow-hidden flex flex-col font-sans">
         {/* Title Bar */}
-        <div className="bg-slate-200 px-3 py-2 border-b border-slate-300 flex items-center justify-between font-semibold text-slate-800 select-none">
+        <div className="bg-gray-100 px-3 py-2 border-b border-gray-300 flex items-center justify-between font-semibold text-gray-800 select-none">
           <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-emerald-600" />
-            <span>{lang === 'bn' ? 'কেস ফিল্টার করুন (Select Cases)' : 'Select Cases'}</span>
+            <Filter className="w-4 h-4 text-gray-600" />
+            <span>{lang === 'bn' ? 'AutoStat কেস ফিল্টার (Select Cases)' : 'AutoStat - Select Cases'}</span>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-300 rounded text-slate-600">
+          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-600">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -188,23 +188,23 @@ export const SelectCasesModal: React.FC<SelectCasesModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-200 border-t border-slate-300 px-4 py-2.5 flex items-center justify-end space-x-2 select-none">
+        <div className="bg-gray-100 border-t border-gray-300 px-4 py-2.5 flex items-center justify-end space-x-2 select-none">
           <button
             onClick={handleApply}
-            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-2xs transition flex items-center space-x-1"
+            className="px-4 py-1.5 bg-gray-900 hover:bg-black text-white font-medium rounded shadow-2xs transition flex items-center space-x-1"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>{lang === 'bn' ? 'প্রয়োগ করুন (OK)' : 'OK'}</span>
           </button>
           <button
             onClick={handleReset}
-            className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded shadow-2xs transition"
+            className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-2xs transition"
           >
             {lang === 'bn' ? 'রিসেট (Reset)' : 'Reset'}
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded shadow-2xs transition"
+            className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded shadow-2xs transition"
           >
             {lang === 'bn' ? 'বাতিল (Cancel)' : 'Cancel'}
           </button>
